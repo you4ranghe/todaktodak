@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>불멍 감정 소각장</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body { font-family: 'Nanum Myeongjo', serif; background: #04050a; color: #f3e9d8;
+            overflow: hidden; user-select: none; }
+
+        /* ── 배경 슬라이드 ── */
+        .slides { position: fixed; inset: 0; display: flex; height: 100%;
+            transition: transform 0.9s cubic-bezier(.6,.05,.25,1); z-index: 0; will-change: transform; }
+        .slide { position: relative; flex: 0 0 100vw; height: 100%; overflow: hidden; }
+        .slide video { width: 100%; height: 100%; object-fit: cover; }
+        .scrim { position: fixed; inset: 0; z-index: 1; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.12) 25%, rgba(0,0,0,0.5) 100%),
+                linear-gradient(to top, rgba(6,5,3,0.5) 0%, transparent 45%); }
+
+        /* ── 우상단 사운드 ── */
+        .sound-btn { position: fixed; top: 20px; right: 24px; z-index: 30; cursor: pointer;
+            font-size: 22px; opacity: .78;
+            text-shadow: 0 1px 8px rgba(0,0,0,.9); transition: opacity .5s ease; }
+        .sound-btn:hover { opacity: 1; }
+
+        /* ── 슬라이드 내비 ── */
+        .nav { position: fixed; top: 50%; transform: translateY(-50%); z-index: 28; cursor: pointer;
+            font-size: 44px; color: rgba(255,236,210,.55); padding: 16px;
+            transition: color .5s ease, transform .4s ease; line-height: 1; background: none; border: none; }
+        .nav:hover { color: rgba(255,236,210,.95); }
+        .nav.prev { left: 10px; } .nav.next { right: 10px; }
+        .dots { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); z-index: 28;
+            display: flex; gap: 10px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,236,210,.35);
+            cursor: pointer; transition: all .5s ease; }
+        .dot.on { background: #ffd9a8; box-shadow: 0 0 12px rgba(255,170,90,.8); transform: scale(1.25); }
+
+        /* ── 중앙 히어로 ── */
+        .hero { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; padding: 24px;
+            transition: opacity .9s ease, transform .9s ease; }
+        .hero.hide { opacity: 0; transform: translateY(-12px); pointer-events: none; }
+        .kicker { font-size: 12px; letter-spacing: 7px; color: #ffcd98; opacity: .85; margin-bottom: 16px;
+            text-shadow: 0 2px 14px rgba(0,0,0,.9); }
+        .title { font-weight: 800; font-size: clamp(30px, 6vw, 56px); line-height: 1.25; color: #fff4e6;
+            text-shadow: 0 2px 30px rgba(255,150,60,.4), 0 2px 12px rgba(0,0,0,.9); }
+        .hint { margin-top: 18px; font-size: clamp(15px,2.2vw,19px); color: #ecd9c0; line-height: 1.7;
+            text-shadow: 0 1px 10px rgba(0,0,0,.9); transition: opacity .6s ease; }
+
+        /* CTA: 테두리 없이, 천천히 부드럽게 */
+        .enter { margin-top: 42px; cursor: pointer; background: none; border: none;
+            font-family: 'Nanum Myeongjo', serif; font-size: 19px; letter-spacing: 2px; color: #ffe9d2;
+            opacity: .9; text-shadow: 0 1px 12px rgba(0,0,0,.8); padding: 12px 10px; position: relative;
+            transition: letter-spacing 1s ease, color 1s ease, text-shadow 1s ease, transform 1s ease, opacity 1s ease; }
+        .enter::after { content: ''; position: absolute; left: 50%; bottom: 4px; width: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, #ffce95, transparent);
+            transition: width 1s ease, left 1s ease; }
+        .enter:hover, .enter:focus { outline: none; letter-spacing: 7px; opacity: 1; color: #fff8ef;
+            text-shadow: 0 0 30px rgba(255,170,90,.75); transform: translateY(-3px); }
+        .enter:hover::after, .enter:focus::after { width: 80%; left: 10%; }
+
+        /* ── 배경에 직접 쓰기 ── */
+        .writewrap { position: fixed; inset: 0; z-index: 22; display: none; flex-direction: column;
+            align-items: center; justify-content: center; padding: 8vh 6vw; }
+        .writewrap.show { display: flex; }
+        .writer { width: min(880px, 92vw); max-height: 56vh; overflow-y: auto; text-align: center;
+            font-family: 'Gowun Dodum', sans-serif; font-size: clamp(22px, 3.4vw, 32px); line-height: 1.8;
+            color: #fff3e2; outline: none; caret-color: #ffce95; word-break: break-word;
+            text-shadow: 0 2px 18px rgba(0,0,0,.85), 0 1px 4px rgba(0,0,0,.9); }
+        .writer:empty::before { content: attr(data-ph); color: rgba(255,243,226,.45); }
+        .writer span { display: inline-block; white-space: pre; will-change: transform, opacity; }
+        .dispose { margin-top: 36px; cursor: pointer; background: none; border: none;
+            font-family: 'Gowun Dodum', sans-serif; font-size: 19px; letter-spacing: 3px;
+            color: #ffd9b0; opacity: .85; text-shadow: 0 1px 12px rgba(0,0,0,.85);
+            transition: opacity .8s ease, letter-spacing .8s ease, color .8s ease, transform .8s ease; }
+        .dispose:hover { opacity: 1; letter-spacing: 5px; color: #ffe7c9; transform: translateY(-2px); }
+        .dispose.gone { opacity: 0; pointer-events: none; }
+
+        /* ── 위로 문구 ── */
+        .comfort { position: fixed; inset: 0; z-index: 24; display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 24px; opacity: 0; pointer-events: none;
+            transition: opacity 1.4s ease; }
+        .comfort.show { opacity: 1; }
+        .comfort p { font-family: 'Gowun Dodum', sans-serif; font-size: clamp(20px, 3.4vw, 30px); line-height: 1.7;
+            color: #fff4e6; text-shadow: 0 2px 24px rgba(0,0,0,.9), 0 0 30px rgba(255,160,70,.25); }
+    </style>
+</head>
+<body>
+    <div class="slides" id="slides">
+        <div class="slide"><video data-i="0" muted loop playsinline preload="auto"><source src="/assets/fireplace.mp4" type="video/mp4"></video></div>
+        <div class="slide"><video data-i="1" muted loop playsinline preload="auto"><source src="/assets/rain.mp4" type="video/mp4"></video></div>
+        <div class="slide"><video data-i="2" muted loop playsinline preload="auto"><source src="/assets/yoga.mp4" type="video/mp4"></video></div>
+    </div>
+    <div class="scrim"></div>
+
+    <audio id="amb" loop preload="auto"></audio>
+    <audio id="pen" loop preload="auto"><source src="/assets/pen.ogg" type="audio/ogg"></audio>
+
+    <span class="sound-btn" id="soundBtn" onclick="toggleSound()" title="소리 켜기/끄기">🔇</span>
+
+    <button class="nav prev" onclick="go(-1)" aria-label="이전 배경">‹</button>
+    <button class="nav next" onclick="go(1)" aria-label="다음 배경">›</button>
+    <div class="dots" id="dots"></div>
+
+    <div class="hero" id="hero">
+        <h1 class="title">불멍 감정 소각장</h1>
+        <p class="hint" id="hint"></p>
+        <button class="enter" id="enterBtn" onclick="enterWrite()">내 감정 살피기</button>
+    </div>
+
+    <div class="writewrap" id="writewrap">
+        <div class="writer" id="writer" contenteditable="true" data-ph="여기, 마음을 적어 내려가세요…"></div>
+        <button class="dispose" id="disposeBtn" onclick="dispose()">감정 정리</button>
+    </div>
+
+    <div class="comfort" id="comfort"><p id="comfortText"></p></div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+
+        /* ── 장면 데이터 ── */
+        const SCENES = [
+            { amb: '/assets/fire.ogg',    hint: '타닥타닥… 다 태워버려도 괜찮아요.' },
+            { amb: '/assets/rain.ogg',    hint: '창밖엔 비가 내려요. 마음도 함께 씻어내요.' },
+            { amb: '/assets/morning.ogg', hint: '고요한 새벽, 천천히 숨을 골라봐요.' }
+        ];
+        const COMFORTS = [
+            '잘했어요.. 이제 좀 진정이 되셨나요.',
+            '수고했어요. 오늘도 잘 버텨냈어요.',
+            '그 마음, 잘 보냈어요. 한결 가벼워지기를.',
+            '괜찮아요. 이제 조금 쉬어도 돼요.',
+            '다 흘려보냈어요. 깊게 숨 한 번 쉬어볼까요.',
+            '당신 잘못이 아니에요. 충분히 애썼어요.',
+            '무거웠던 마음, 바람에 실어 보냈어요.',
+            '조금은 따뜻해졌나요. 천천히 와도 돼요.',
+            '잘 견뎌줘서 고마워요.',
+            '오늘의 당신에게, 작은 위로를 건네요.'
+        ];
+
+        const vids = [...document.querySelectorAll('.slide video')];
+        let idx = 0, writing = false;
+
+        /* ── 사운드 ── */
+        const amb = $('amb'), pen = $('pen');
+        amb.volume = 0.45; pen.volume = 1.0;
+        let soundOn = false;
+        function setSoundUI(){ $('soundBtn').textContent = soundOn ? '🔊' : '🔇'; }
+        function playAmb(){ if(!soundOn) return; amb.src = SCENES[idx].amb; amb.play().catch(()=>{}); }
+        function toggleSound(){
+            if (soundOn){ soundOn = false; amb.pause(); pen.pause(); }
+            else { soundOn = true; ensureCtx(); playAmb(); }
+            setSoundUI();
+        }
+        document.addEventListener('click', function once(){
+            ensureCtx();
+            if (!soundOn){ soundOn = true; playAmb(); setSoundUI(); }
+            document.removeEventListener('click', once);
+        }, { once: true });
+
+        /* ── 슬라이드 ── */
+        function buildDots(){
+            const d = $('dots');
+            SCENES.forEach((_, i) => {
+                const s = document.createElement('span'); s.className = 'dot' + (i===0?' on':'');
+                s.onclick = () => setSlide(i); d.appendChild(s);
+            });
+        }
+        const slidesEl = $('slides');
+        const vw = () => window.innerWidth;
+        function applyX(px, animate){
+            slidesEl.style.transition = animate ? 'transform .6s cubic-bezier(.6,.05,.25,1)' : 'none';
+            slidesEl.style.transform = `translateX(${px}px)`;
+        }
+        function setSlide(i){
+            if (writing) return;
+            const prev = idx;
+            idx = Math.max(0, Math.min(SCENES.length - 1, i));   // 0~2 (양 끝에서 멈춤)
+            applyX(-idx * vw(), true);
+            if (i !== prev || true) {
+                $('hint').style.opacity = 0;
+                setTimeout(()=>{ $('hint').textContent = SCENES[idx].hint; $('hint').style.opacity = 1; }, 300);
+            }
+            [...$('dots').children].forEach((d,k)=>d.classList.toggle('on', k===idx));
+            vids.forEach((v,k)=>{ if(k===idx){ v.play().catch(()=>{}); } else { v.pause(); } });
+            playAmb();
+        }
+        function go(dir){ setSlide(idx + dir); }
+
+        /* 드래그/스와이프 — 손가락/마우스를 따라 실시간으로 밀리고, 떼면 스냅 */
+        let dragging = false, startX = 0, baseX = 0, moved = false;
+        function dStart(x){ if (writing) return; dragging = true; moved = false; startX = x; baseX = -idx * vw(); }
+        function dMove(x){ if (!dragging) return; const dx = x - startX; if (Math.abs(dx) > 4) moved = true; applyX(baseX + dx, false); }
+        function dEnd(x){
+            if (!dragging) return; dragging = false;
+            const dx = x - startX; const th = vw() * 0.12;
+            if (dx < -th) setSlide(idx + 1);
+            else if (dx > th) setSlide(idx - 1);
+            else applyX(-idx * vw(), true);              // 원위치 스냅
+        }
+        slidesEl.addEventListener('pointerdown', e => dStart(e.clientX));
+        window.addEventListener('pointermove', e => dMove(e.clientX));
+        window.addEventListener('pointerup',   e => dEnd(e.clientX));
+        window.addEventListener('pointercancel', () => { if(dragging){ dragging=false; applyX(-idx*vw(), true); } });
+        // 드래그 후 클릭으로 오인되는 것 방지(슬라이드 영역 한정)
+        slidesEl.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); } }, true);
+        window.addEventListener('keydown', e => { if(writing) return;
+            if(e.key==='ArrowRight') go(1); if(e.key==='ArrowLeft') go(-1); });
+        window.addEventListener('resize', () => applyX(-idx * vw(), false));
+
+        /* ── 쓰기 ── */
+        const writer = $('writer');
+        function enterWrite(){
+            writing = true;
+            $('hero').classList.add('hide');
+            setTimeout(()=>{ $('writewrap').classList.add('show'); writer.innerHTML=''; writer.focus(); }, 500);
+        }
+        // 입력음: 모바일=만년필 사각사각 / PC=듣기 좋은 무소음 기계식 타자음
+        const isTouch = window.matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window);
+        // 만년필 소리: WebAudio로 부드럽게(저역통과) + 확실히 들리게 증폭
+        let penWired = false;
+        function wirePen(){
+            const ctx = ensureCtx(); if (!ctx || penWired) return;
+            try {
+                const src = ctx.createMediaElementSource(pen);
+                const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200; // 거친 고역 정리
+                const g = ctx.createGain(); g.gain.value = 3.0;                                       // 증폭
+                src.connect(lp).connect(g).connect(ctx.destination);
+                penWired = true;
+            } catch (e) { /* 이미 연결됨 */ }
+        }
+        if (isTouch) {
+            let penTimer;
+            writer.addEventListener('input', () => {
+                if (!soundOn) return;
+                wirePen();
+                if (pen.paused){ pen.currentTime = 0; pen.play().catch(()=>{}); }
+                clearTimeout(penTimer);
+                penTimer = setTimeout(()=> pen.pause(), 350);
+            });
+        } else {
+            const IGNORE = new Set(['Shift','Control','Alt','Meta','CapsLock','Tab','ArrowLeft','ArrowRight','ArrowUp','ArrowDown']);
+            writer.addEventListener('keydown', (e) => {
+                if (!soundOn || IGNORE.has(e.key)) return;
+                keyClick(e.key === ' ' || e.key === 'Enter');   // 스페이스/엔터는 살짝 낮고 깊게
+            });
+        }
+
+        // 무소음 기계식 키 사운드 (WebAudio 합성)
+        let actx = null;
+        function ensureCtx(){
+            if (!actx) { const C = window.AudioContext || window.webkitAudioContext; if (C) actx = new C(); }
+            if (actx && actx.state === 'suspended') actx.resume();
+            return actx;
+        }
+        function keyClick(deep){
+            const ctx = ensureCtx(); if (!ctx) return;
+            const t = ctx.currentTime;
+            // 1) 아주 짧고 머플된 노이즈 '틱' (접촉음을 부드럽게)
+            const dur = 0.045;
+            const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*dur), ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i=0;i<d.length;i++){ d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 4); }
+            const noise = ctx.createBufferSource(); noise.buffer = buf;
+            const lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = (deep?700:1000) + Math.random()*300;
+            const ng = ctx.createGain(); ng.gain.value = deep ? 0.022 : 0.03;   // 클릭감 대폭 ↓
+            noise.connect(lp).connect(ng).connect(ctx.destination);
+            // 2) 낮고 부드러운 '톡' — 완만한 어택
+            const osc = ctx.createOscillator(); osc.type='sine';
+            osc.frequency.value = (deep?72:100) + Math.random()*18;
+            const og = ctx.createGain();
+            og.gain.setValueAtTime(0.0001, t);
+            og.gain.exponentialRampToValueAtTime(deep?0.07:0.05, t+0.009);       // 더 작게+부드럽게
+            og.gain.exponentialRampToValueAtTime(0.0001, t + (deep?0.12:0.09));
+            osc.connect(og).connect(ctx.destination);
+            noise.start(t); noise.stop(t+dur);
+            osc.start(t); osc.stop(t + (deep?0.13:0.1));
+        }
+
+        // CTA 글자가 하나씩 생겨나오는 애니메이션
+        function setEnterText(text, animate){
+            const btn = $('enterBtn'); btn.innerHTML = '';
+            [...text].forEach((ch, i) => {
+                const s = document.createElement('span');
+                s.textContent = ch === ' ' ? ' ' : ch;
+                s.style.display = 'inline-block';
+                if (animate){
+                    s.style.opacity = '0'; s.style.transform = 'translateY(12px)';
+                    s.style.transition = `opacity .55s ease ${i*0.06}s, transform .55s ease ${i*0.06}s`;
+                    requestAnimationFrame(()=>{ s.style.opacity = '1'; s.style.transform = 'none'; });
+                }
+                btn.appendChild(s);
+            });
+        }
+
+        /* ── 감정 정리: 글씨가 흩날리듯 소멸 ── */
+        function dispose(){
+            const text = writer.innerText.replace(/ /g,' ').replace(/\s+$/,'');
+            if (!text.trim()){ writer.focus(); return; }
+            pen.pause(); $('disposeBtn').classList.add('gone');
+
+            // 글자를 span으로 분해
+            writer.innerHTML = '';
+            for (const ch of text){
+                if (ch === '\n'){ writer.appendChild(document.createElement('br')); continue; }
+                const s = document.createElement('span');
+                s.textContent = (ch === ' ') ? ' ' : ch;
+                writer.appendChild(s);
+            }
+            const spans = [...writer.querySelectorAll('span')];
+            // 강제 리플로우 후 흩날리기
+            void writer.offsetWidth;
+            spans.forEach(s => {
+                const dx = (Math.random()-0.5)*window.innerWidth*0.5;
+                const dy = -(Math.random()*window.innerHeight*0.35 + 80);
+                const rot = (Math.random()-0.5)*220;
+                const delay = Math.random()*0.6;
+                s.style.transition = `transform 2s cubic-bezier(.2,.55,.2,1) ${delay}s, opacity 2s ease ${delay}s, filter 2s ease ${delay}s`;
+                requestAnimationFrame(()=>{
+                    s.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(.35)`;
+                    s.style.opacity = '0';
+                    s.style.filter = 'blur(3px)';
+                });
+            });
+
+            setTimeout(showComfort, 2500);
+        }
+
+        function showComfort(){
+            $('writewrap').classList.remove('show');
+            writer.innerHTML = '';
+            $('disposeBtn').classList.remove('gone');
+            $('comfortText').textContent = COMFORTS[Math.floor(Math.random()*COMFORTS.length)];
+            $('comfort').classList.add('show');
+            setTimeout(()=>{
+                $('comfort').classList.remove('show');
+                setTimeout(()=>{
+                    writing = false;
+                    $('hero').classList.remove('hide');
+                    setEnterText('내 감정 들여다 보기', true);   // 글자가 하나씩 생겨나옴
+                }, 1200);
+            }, 3600);
+        }
+
+        /* ── init ── */
+        buildDots();
+        $('hint').textContent = SCENES[0].hint;
+        setSoundUI();
+        window.addEventListener('load', ()=> vids[0].play().catch(()=>{}));
+        vids[0].play().catch(()=>{});
+    </script>
+</body>
+</html>

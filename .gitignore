@@ -1,0 +1,23 @@
+# Gradle / build
+/build/
+/.gradle/
+
+# 정적 ffmpeg 빌드(약 100MB) - 로컬 도구
+/.tools/
+
+# H2 DB 파일 (휘발 데이터)
+/data/
+
+# 임시 에셋 후보
+/.bgcandidates/
+/.srcvid/
+
+# Claude 로컬 설정
+/.claude/
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db

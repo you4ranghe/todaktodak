@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>불멍 감정 소각장</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(ellipse at bottom, #2b1606 0%, #0a0a0f 60%, #000 100%);
+            color: #f3e9d8;
+            overflow: hidden;
+        }
+        .ember {
+            position: fixed; inset: 0; pointer-events: none;
+            background: radial-gradient(circle at 50% 100%, rgba(255,140,40,0.25), transparent 55%);
+            animation: flicker 3.5s ease-in-out infinite;
+        }
+        @keyframes flicker { 0%,100%{opacity:.7} 50%{opacity:1} }
+        .card {
+            position: relative; z-index: 2;
+            width: 360px; max-width: 90vw;
+            background: rgba(20,16,12,0.72);
+            border: 1px solid rgba(255,170,90,0.18);
+            border-radius: 18px;
+            padding: 42px 34px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+        .flame { font-size: 46px; filter: drop-shadow(0 0 12px #ff8c28); }
+        h1 { font-size: 22px; margin: 10px 0 4px; letter-spacing: -0.5px; }
+        .sub { font-size: 13px; color: #c8b9a3; margin-bottom: 26px; }
+        input {
+            width: 100%; padding: 13px 14px; margin-bottom: 12px;
+            background: rgba(0,0,0,0.35); border: 1px solid rgba(255,200,140,0.2);
+            border-radius: 10px; color: #f3e9d8; font-size: 14px;
+        }
+        input:focus { outline: none; border-color: #ff9d44; }
+        button {
+            width: 100%; padding: 14px; margin-top: 6px; cursor: pointer;
+            background: linear-gradient(180deg, #ff9d44, #e8631c);
+            border: none; border-radius: 10px; color: #1a0f06;
+            font-size: 15px; font-weight: 700;
+        }
+        button:hover { filter: brightness(1.08); }
+        .links { margin-top: 18px; font-size: 13px; color: #c8b9a3; }
+        .links a { color: #ffb86b; text-decoration: none; }
+        .msg { font-size: 13px; margin-bottom: 14px; }
+        .err { color: #ff8a8a; }
+        .ok { color: #9fe6a0; }
+    </style>
+</head>
+<body>
+    <div class="ember"></div>
+    <div class="card">
+        <div class="flame">🔥</div>
+        <h1>불멍 감정 소각장</h1>
+        <p class="sub">오늘의 무거운 마음, 여기 두고 가세요.</p>
+
+        <p class="msg err" th:if="${param.error}">아이디 또는 비밀번호를 확인해주세요.</p>
+        <p class="msg ok" th:if="${param.logout}">안전하게 나왔습니다.</p>
+        <p class="msg ok" th:if="${param.registered}">가입 완료! 이제 입장하세요.</p>
+
+        <form th:action="@{/login}" method="post">
+            <input type="text" name="username" placeholder="아이디" required autofocus>
+            <input type="password" name="password" placeholder="비밀번호" required>
+            <button type="submit">소각장 입장</button>
+        </form>
+        <div class="links">
+            처음이신가요? <a th:href="@{/signup}">계정 만들기</a>
+        </div>
+    </div>
+</body>
+</html>

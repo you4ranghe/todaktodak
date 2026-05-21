@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>불멍 감정 소각장</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
+            background: #05060a; color: #f3e9d8; overflow: hidden;
+        }
+        /* 배경: 벽난로 루프 영상 */
+        .bgvid { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+        .scrim { position: fixed; inset: 0; z-index: 1; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0.15) 30%, rgba(0,0,0,0.55) 100%),
+                linear-gradient(to top, rgba(8,5,3,0.9) 0%, transparent 42%); }
+        canvas#snow { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+
+        .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 22px; font-size: 13px; color: #e7d8c2; text-shadow: 0 1px 4px rgba(0,0,0,0.85); }
+        .topbar a { color: #ffce95; text-decoration: none; }
+        .badge { background: rgba(0,0,0,0.45); padding: 6px 12px; border-radius: 20px;
+            border: 1px solid rgba(255,180,100,0.25); }
+        .sound-btn { cursor: pointer; background: rgba(0,0,0,0.5); color: #ffd9a8;
+            padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255,180,100,0.3); font-size: 13px; }
+        .sound-btn:hover { background: rgba(0,0,0,0.7); }
+        .who { background: rgba(0,0,0,0.45); padding: 6px 12px; border-radius: 20px;
+            border: 1px solid rgba(255,180,100,0.2); }
+
+        .center { position: relative; z-index: 20; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            padding-bottom: 8vh; text-align: center; }
+        .title { font-size: 20px; letter-spacing: 0.5px; margin-bottom: 6px; text-shadow: 0 2px 12px rgba(0,0,0,0.95); }
+        .hint { font-size: 14px; color: #e8d6bd; opacity: 0.92; text-shadow: 0 1px 8px rgba(0,0,0,0.95); }
+        .throw-btn { margin-top: 22px; padding: 15px 32px; cursor: pointer;
+            background: linear-gradient(180deg, #ffb155, #e8631c); border: none; border-radius: 30px;
+            color: #1a0f06; font-size: 16px; font-weight: 700; box-shadow: 0 8px 34px rgba(232,99,28,0.5); }
+        .throw-btn:hover { filter: brightness(1.08); }
+
+        .overlay { position: fixed; inset: 0; z-index: 40; display: none;
+            align-items: center; justify-content: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(7px); }
+        .overlay.show { display: flex; }
+        .note { width: 430px; max-width: 90vw; padding: 30px 28px;
+            background: linear-gradient(#fffdf5, #f1e7cf); color: #3a2f22; border-radius: 5px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7); transform: rotate(-0.6deg);
+            transition: transform 0.55s cubic-bezier(.5,-0.3,.5,1.4), opacity 0.55s ease, filter 0.55s ease; }
+        .note h2 { font-size: 17px; margin-bottom: 14px; font-weight: 700; }
+        .note select, .note textarea {
+            width: 100%; border: 1px solid #d8cbb0; border-radius: 5px;
+            padding: 11px; font-size: 14px; background: #fffefb; color: #3a2f22; font-family: inherit; }
+        .note textarea { height: 150px; resize: none; margin-top: 10px; line-height: 1.6; }
+        .note .row { display: flex; gap: 10px; margin-top: 16px; }
+        .note button { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: 700; }
+        .btn-burn { background: linear-gradient(180deg,#ffb155,#e8631c); color: #1a0f06; }
+        .btn-cancel { background: #e7ddc8; color: #6b5d45; }
+
+        .consolation { margin-top: 16px; padding: 14px; border-radius: 5px;
+            background: rgba(255,150,60,0.12); border: 1px solid rgba(200,120,40,0.28);
+            font-size: 14px; line-height: 1.6; color: #5a4a32; display: none; }
+        .consolation.show { display: block; }
+
+        .note.shiver { animation: shiver 0.1s linear infinite; }
+        @keyframes shiver { 0%{transform:rotate(-0.6deg) translate(0,0)} 25%{transform:rotate(-1.4deg) translate(-1px,1px)}
+            50%{transform:rotate(0.2deg) translate(1px,-1px)} 75%{transform:rotate(-1deg) translate(1px,1px)} }
+        .note.burning { transform: scale(0.04) rotate(420deg) translateY(46vh); opacity: 0; filter: brightness(2) sepia(1) hue-rotate(-20deg); }
+
+        .flash { position: fixed; inset: 0; z-index: 45; pointer-events: none; opacity: 0;
+            background: radial-gradient(circle at 50% 70%, rgba(255,160,60,0.55), transparent 60%); }
+        .flash.go { animation: flash 0.8s ease-out; }
+        @keyframes flash { 0%{opacity:0} 20%{opacity:1} 100%{opacity:0} }
+
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 50;
+            background: rgba(20,14,8,0.92); border: 1px solid rgba(255,180,100,0.3);
+            padding: 12px 20px; border-radius: 30px; font-size: 14px; display: none; }
+        .toast.show { display: block; }
+
+        @media (max-width: 600px) {
+            .note { padding: 22px 18px; }
+            .who { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <video class="bgvid" autoplay muted loop playsinline poster="/assets/scene.jpg">
+        <source src="/assets/fireplace.mp4" type="video/mp4">
+    </video>
+    <div class="scrim"></div>
+    <canvas id="snow"></canvas>
+    <div class="flash" id="flash"></div>
+
+    <audio id="amb" loop preload="auto">
+        <source src="/assets/fire.ogg" type="audio/ogg">
+    </audio>
+
+    <div class="topbar">
+        <span class="badge">🗑 쓰레기통 <b id="canCount">0</b></span>
+        <span>
+            <span class="sound-btn" id="soundBtn" onclick="toggleSound()">🔇 소리 켜기</span>
+            <span class="who"><b sec:authentication="name">user</b> 님 ·
+                <a href="#" onclick="event.preventDefault();document.getElementById('logoutForm').submit();">나가기</a></span>
+            <form id="logoutForm" th:action="@{/logout}" method="post" style="display:none"></form>
+        </span>
+    </div>
+
+    <div class="center">
+        <p class="title">불멍 감정 소각장</p>
+        <p class="hint">타닥타닥… 눈 내리는 밤, 다 태워버려도 괜찮아요.</p>
+        <button class="throw-btn" onclick="openNote()">감정 버리기</button>
+    </div>
+
+    <div class="overlay" id="overlay">
+        <div class="note" id="note">
+            <h2>✍️ 무엇을 버리고 싶나요?</h2>
+            <select id="category">
+                <option th:each="c : ${categories}" th:value="${c.name()}" th:text="${c.label}"></option>
+            </select>
+            <textarea id="content" placeholder="여기에 마음을 쏟아내세요. 아무도 보지 않아요."></textarea>
+            <div class="consolation" id="consolation"></div>
+            <div class="row" id="writeRow">
+                <button class="btn-cancel" onclick="closeNote()">접기</button>
+                <button class="btn-burn" onclick="submitTrash()">소각하기</button>
+            </div>
+            <div class="row" id="burnRow" style="display:none">
+                <button class="btn-burn" onclick="doBurn()">🔥 불 속으로</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script th:inline="javascript">
+        const $ = id => document.getElementById(id);
+
+        /* ── 사운드 ── */
+        const amb = $('amb'); amb.volume = 0.4;
+        let soundOn = false;
+        function setSoundUI(){ $('soundBtn').textContent = soundOn ? '🔊 소리 끄기' : '🔇 소리 켜기'; }
+        function toggleSound(){
+            if (soundOn){ amb.pause(); soundOn = false; setSoundUI(); }
+            else { amb.play().then(()=>{ soundOn = true; setSoundUI(); }).catch(()=>{}); }
+        }
+        document.addEventListener('click', function once(){
+            if (!soundOn){ amb.play().then(()=>{ soundOn = true; setSoundUI(); }).catch(()=>{}); }
+            document.removeEventListener('click', once);
+        }, { once: true });
+
+        /* ── 눈 + 불티 파티클 ── */
+        const cv = $('snow'), ctx = cv.getContext('2d');
+        let W, H, flakes = [], embers = [];
+        function resize(){ W = cv.width = innerWidth; H = cv.height = innerHeight; }
+        addEventListener('resize', resize); resize();
+        const flakeCount = innerWidth < 600 ? 60 : 110;
+        for (let i = 0; i < flakeCount; i++) {
+            flakes.push({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*2.4+0.6,
+                          s: Math.random()*0.7+0.25, sway: Math.random()*Math.PI*2 });
+        }
+        function spawnEmbers(){
+            for (let i = 0; i < 70; i++) {
+                embers.push({ x: W*0.5 + (Math.random()-0.5)*220, y: H*0.62,
+                              vx: (Math.random()-0.5)*1.6, vy: -(Math.random()*3+1.5),
+                              r: Math.random()*2.2+0.8, life: 1 });
+            }
+        }
+        function tick(){
+            ctx.clearRect(0,0,W,H);
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            for (const f of flakes){
+                f.y += f.s; f.sway += 0.01; f.x += Math.sin(f.sway)*0.4;
+                if (f.y > H){ f.y = -5; f.x = Math.random()*W; }
+                ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
+            }
+            for (let i = embers.length-1; i >= 0; i--){
+                const e = embers[i];
+                e.x += e.vx; e.y += e.vy; e.vy += 0.02; e.life -= 0.012;
+                if (e.life <= 0){ embers.splice(i,1); continue; }
+                ctx.fillStyle = `rgba(255,${150+Math.random()*80|0},40,${e.life})`;
+                ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2); ctx.fill();
+            }
+            requestAnimationFrame(tick);
+        }
+        tick();
+
+        /* ── 실제 백엔드 연동 ── */
+        let currentTrashId = null;
+        function openNote(){ $('overlay').classList.add('show'); $('content').focus(); }
+        function closeNote(){ $('overlay').classList.remove('show'); resetNote(); }
+        function resetNote(){
+            currentTrashId = null;
+            $('content').value = '';
+            $('consolation').classList.remove('show'); $('consolation').textContent = '';
+            $('writeRow').style.display = 'flex'; $('burnRow').style.display = 'none';
+            $('note').classList.remove('burning','shiver');
+        }
+        function showToast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
+        async function submitTrash(){
+            const content = $('content').value.trim(), category = $('category').value;
+            if(!content){ showToast('버릴 감정을 적어주세요.'); return; }
+            const note = $('note'); note.classList.add('shiver'); // AI 응답 대기 연출
+            try {
+                const res = await fetch('/api/trash', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content, category })
+                });
+                note.classList.remove('shiver');
+                if (!res.ok) { showToast('잠시 후 다시 시도해주세요.'); return; }
+                const data = await res.json();
+                currentTrashId = data.id;
+                const c = $('consolation');
+                c.textContent = data.aiConsolation;
+                c.classList.add('show');
+                $('writeRow').style.display = 'none'; $('burnRow').style.display = 'flex';
+            } catch (e) {
+                note.classList.remove('shiver');
+                showToast('연결에 문제가 있어요.');
+            }
+        }
+
+        async function doBurn(){
+            if (!currentTrashId) return;
+            $('note').classList.add('burning');
+            $('flash').classList.add('go');
+            spawnEmbers();
+            setTimeout(()=>$('flash').classList.remove('go'), 800);
+            try { await fetch('/api/trash/' + currentTrashId + '/burn', { method: 'PATCH' }); } catch (e) {}
+            setTimeout(()=>{ closeNote(); showToast('🔥 깨끗이 타올랐어요.'); refreshCan(); }, 700);
+        }
+
+        async function refreshCan(){
+            try {
+                const res = await fetch('/api/trash/can');
+                if (res.ok) { const data = await res.json(); $('canCount').textContent = data.count; }
+            } catch (e) {}
+        }
+
+        setSoundUI();
+        refreshCan();
+    </script>
+</body>
+</html>

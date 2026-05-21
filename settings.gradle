@@ -1,0 +1,6 @@
+plugins {
+    // JDK 21 toolchain 자동 프로비저닝 (설치된 JDK가 8/11/25뿐이라 21을 받아옴)
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
+rootProject.name = 'bonfire'

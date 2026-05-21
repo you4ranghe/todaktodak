@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: bonfire
+
+  # Phase 1 결정: 사용자 데이터/AI 컨텍스트 보존을 위해 In-Memory 대신 File 모드 사용.
+  # (사용자에게는 과거 기록을 노출하지 않지만, 백엔드 AI 참조를 위해 물리 보존)
+  datasource:
+    url: jdbc:h2:file:./data/bonfire
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  thymeleaf:
+    cache: false
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    # 주의: 사용자의 날것 감정(content)은 절대 로깅하지 않는다 (개인정보/신뢰)
+    org.hibernate.SQL: INFO

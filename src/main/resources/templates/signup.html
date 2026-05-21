@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>계정 만들기 · 불멍 감정 소각장</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(ellipse at bottom, #2b1606 0%, #0a0a0f 60%, #000 100%);
+            color: #f3e9d8;
+        }
+        .card {
+            width: 360px; max-width: 90vw;
+            background: rgba(20,16,12,0.72);
+            border: 1px solid rgba(255,170,90,0.18);
+            border-radius: 18px; padding: 40px 34px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6); text-align: center;
+        }
+        h1 { font-size: 20px; margin-bottom: 22px; }
+        input {
+            width: 100%; padding: 13px 14px; margin-bottom: 12px;
+            background: rgba(0,0,0,0.35); border: 1px solid rgba(255,200,140,0.2);
+            border-radius: 10px; color: #f3e9d8; font-size: 14px;
+        }
+        input:focus { outline: none; border-color: #ff9d44; }
+        button {
+            width: 100%; padding: 14px; margin-top: 6px; cursor: pointer;
+            background: linear-gradient(180deg, #ff9d44, #e8631c);
+            border: none; border-radius: 10px; color: #1a0f06; font-size: 15px; font-weight: 700;
+        }
+        .links { margin-top: 18px; font-size: 13px; color: #c8b9a3; }
+        .links a { color: #ffb86b; text-decoration: none; }
+        .err { color: #ff8a8a; font-size: 13px; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔥 계정 만들기</h1>
+        <p class="err" th:if="${error}" th:text="${error}"></p>
+        <form th:action="@{/signup}" method="post">
+            <input type="text" name="username" placeholder="아이디" required autofocus>
+            <input type="password" name="password" placeholder="비밀번호" required>
+            <input type="text" name="nickname" placeholder="닉네임" required>
+            <button type="submit">가입하기</button>
+        </form>
+        <div class="links"><a th:href="@{/login}">← 로그인으로</a></div>
+    </div>
+</body>
+</html>
