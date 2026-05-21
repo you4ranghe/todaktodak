@@ -23,11 +23,16 @@
                 radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.12) 25%, rgba(0,0,0,0.5) 100%),
                 linear-gradient(to top, rgba(6,5,3,0.5) 0%, transparent 45%); }
 
-        /* ── 우상단 사운드 ── */
-        .sound-btn { position: fixed; top: 20px; right: 24px; z-index: 30; cursor: pointer;
-            font-size: 22px; opacity: .78;
-            text-shadow: 0 1px 8px rgba(0,0,0,.9); transition: opacity .5s ease; }
-        .sound-btn:hover { opacity: 1; }
+        /* ── 우상단 아이콘(기록 · 사운드) ── */
+        .topbar-icons { position: fixed; top: 20px; right: 24px; z-index: 30;
+            display: flex; align-items: center; gap: 16px; }
+        .icon-btn { cursor: pointer; font-size: 22px; line-height: 1; opacity: .8;
+            text-shadow: 0 1px 8px rgba(0,0,0,.9); transition: opacity .5s ease, filter .4s ease; }
+        .icon-btn:hover { opacity: 1; }
+        /* 플로피(기록): 기본 회색, 켜지면 색상 */
+        .record-btn { filter: grayscale(1) brightness(1.25); opacity: .55; }
+        .record-btn:hover { opacity: .85; }
+        .record-btn.on { filter: none; opacity: 1; }
 
         /* ── 슬라이드 내비 ── */
         .nav { position: fixed; top: 50%; transform: translateY(-50%); z-index: 28; cursor: pointer;
@@ -102,7 +107,10 @@
     <audio id="amb" loop preload="auto"></audio>
     <audio id="pen" loop preload="auto"><source src="/assets/pen.ogg" type="audio/ogg"></audio>
 
-    <span class="sound-btn" id="soundBtn" onclick="toggleSound()" title="소리 켜기/끄기">🔇</span>
+    <div class="topbar-icons">
+        <span class="icon-btn record-btn" id="recordBtn" onclick="toggleRecord()" title="기록하지 않습니다">💾</span>
+        <span class="icon-btn" id="soundBtn" onclick="toggleSound()" title="소리 켜기/끄기">🔇</span>
+    </div>
 
     <button class="nav prev" onclick="go(-1)" aria-label="이전 배경">‹</button>
     <button class="nav next" onclick="go(1)" aria-label="다음 배경">›</button>
@@ -162,6 +170,15 @@
             if (!soundOn){ soundOn = true; playAmb(); setSoundUI(); }
             document.removeEventListener('click', once);
         }, { once: true });
+
+        /* ── 기록 저장(플로피) ── 베타: 안내만, 기본값(미기록) 유지 ── */
+        function toggleRecord(){
+            alert('저희 서비스는 베타테스트 중이며 기록하지 않습니다.');
+            // [정식 출시 시 활성화]
+            // const b = $('recordBtn');
+            // const on = b.classList.toggle('on');
+            // b.title = on ? '내 기록을 남겨주세요' : '기록하지 않습니다';
+        }
 
         /* ── 슬라이드 ── */
         function buildDots(){

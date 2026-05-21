@@ -22,9 +22,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                         AntPathRequestMatcher.antMatcher("/"),
+                        AntPathRequestMatcher.antMatcher("/index.html"),
                         AntPathRequestMatcher.antMatcher("/login"),
                         AntPathRequestMatcher.antMatcher("/signup"),
-                        AntPathRequestMatcher.antMatcher("/preview"),
                         AntPathRequestMatcher.antMatcher("/css/**"),
                         AntPathRequestMatcher.antMatcher("/js/**"),
                         AntPathRequestMatcher.antMatcher("/assets/**"),
