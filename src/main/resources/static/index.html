@@ -117,7 +117,7 @@
     <div class="dots" id="dots"></div>
 
     <div class="hero" id="hero">
-        <h1 class="title">불멍 감정 소각장</h1>
+        <h1 class="title">요즘 나 어떻게 지내? 괜찮아?</h1>
         <p class="hint" id="hint"></p>
         <button class="enter" id="enterBtn" onclick="enterWrite()">내 감정 살피기</button>
     </div>
@@ -237,29 +237,11 @@
             $('hero').classList.add('hide');
             setTimeout(()=>{ $('writewrap').classList.add('show'); writer.innerHTML=''; writer.focus(); }, 500);
         }
-        // 입력음: 모바일=만년필 사각사각 / PC=듣기 좋은 무소음 기계식 타자음
+        // 입력음: PC·모바일 모두 듣기 좋은 무소음 기계식 타자음
         const isTouch = window.matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window);
-        // 만년필 소리: WebAudio로 부드럽게(저역통과) + 확실히 들리게 증폭
-        let penWired = false;
-        function wirePen(){
-            const ctx = ensureCtx(); if (!ctx || penWired) return;
-            try {
-                const src = ctx.createMediaElementSource(pen);
-                const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200; // 거친 고역 정리
-                const g = ctx.createGain(); g.gain.value = 3.0;                                       // 증폭
-                src.connect(lp).connect(g).connect(ctx.destination);
-                penWired = true;
-            } catch (e) { /* 이미 연결됨 */ }
-        }
         if (isTouch) {
-            let penTimer;
-            writer.addEventListener('input', () => {
-                if (!soundOn) return;
-                wirePen();
-                if (pen.paused){ pen.currentTime = 0; pen.play().catch(()=>{}); }
-                clearTimeout(penTimer);
-                penTimer = setTimeout(()=> pen.pause(), 350);
-            });
+            // 모바일 키보드는 keydown이 불안정 → 입력 이벤트마다 키음
+            writer.addEventListener('input', () => { if (soundOn) keyClick(); });
         } else {
             const IGNORE = new Set(['Shift','Control','Alt','Meta','CapsLock','Tab','ArrowLeft','ArrowRight','ArrowUp','ArrowDown']);
             writer.addEventListener('keydown', (e) => {
